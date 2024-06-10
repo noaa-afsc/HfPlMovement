@@ -9,7 +9,7 @@ con <- dbConnect(duckdb())
 dbExecute(con, "INSTALL httpfs; LOAD httpfs;")
 # dbExecute(con, "INSTALL 'spatial'; LOAD 'spatial';")
 
-locs_obs <- tbl(con, "read_parquet('https://github.com/noaa-afsc/cefi-ice-seal-movement/raw/main/locs_obs/locs_obs.parquet'") |>
+locs_obs <- tbl(con, "read_parquet('https://github.com/noaa-afsc/mml-cefi-iceseal-data/raw/main/locs_obs/locs_obs.parquet')") |>
   dplyr::filter(between(locs_dt,
                         deploy_dt,
                         end_dt)) |> 
