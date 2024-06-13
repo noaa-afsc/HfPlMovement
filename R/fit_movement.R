@@ -27,11 +27,15 @@ locs_obs <- tbl(con, "read_parquet('https://github.com/noaa-afsc/mml-cefi-icesea
                 quality,
                 error_semi_major_axis,
                 error_semi_minor_axis,
+                error_ellipse_orientation,
                 error_radius,
-                geom
+                geometry = geom
                 ) |> 
   collect() 
 
+dbDisconnect(con, disconnect = TRUE)
+
+proj <- "+proj=laea +lat_0=90 +lon_0=180 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs"
 
 locs_obs <- locs_obs |> 
   group_by(speno) |> 
@@ -44,7 +48,35 @@ locs_obs <- locs_obs |>
   arrange(speno,datetime)  |>  
   ungroup() |> 
   st_as_sf() |> 
-  st_set_crs(4326)
+  st_set_crs(4326) |> 
+  st_transform(proj)
+
+speno_counts <- locs_obs |> 
+  sf::st_drop_geometry() |> 
+  group_by(speno) |> 
+  tally()
+
+speno_keep <- speno_counts |> 
+  filter(n >= 10) %>%
+  select(speno) |> 
+  pull()
+
+locs_obs <- locs_obs |> 
+  filter(speno %in% speno_keep)
 
 
-dbDisconnect(con, disconnect = TRUE)
+locs_fit <- fit_ssm(
+  x = locs_obs,
+  vmax = 8,
+  model = "crw",
+  time.step = 0.25,
+  id = "speno",
+  date = "datetime",
+  lc = "quality",
+  epar = c(
+    "error_semi_major_axis",
+    "error_semi_minor_axis",
+    "error_ellipse_orientation"
+  ),
+  tz = "UTC"
+)
