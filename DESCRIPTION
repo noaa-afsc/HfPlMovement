@@ -1,0 +1,17 @@
+Package: HfPlMovement
+Title: Predicted Movement of Ribbon and Spotted Seals
+Version: 0.1
+Authors@R: 
+    person("Josh", "London", , "josh.london@noaa.gov", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-3647-5046"))
+Description: What the package does (one paragraph).
+License: CC0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2.9000
+Import:
+    sf
+Depends: 
+    R (>= 3.5),
+    sf
+LazyData: true
