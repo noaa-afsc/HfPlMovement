@@ -130,22 +130,40 @@ locs_fit2 <- aniMotum::fit_ssm(
   map = list(psi = factor(NA))
 )
 
-predict_pts_sf <-
+hf_predict_pts <-
   aniMotum::grab(locs_fit,
        what = "predicted",
        as_sf = TRUE,
        group = TRUE) |> 
   dplyr::rename(speno = id,
          datetime = date) |> 
-  dplyr::left_join(tbl_deploy, by = 'speno')
+  dplyr::left_join(tbl_deploy, by = 'speno') |> 
+  dplyr::filter(species == "Ribbon seal")
 
-predict_lines_sf <- predict_pts_sf %>% 
+hf_predict_lines <- hf_predict_pts %>% 
   dplyr::group_by(speno) %>%
   dplyr::summarise(do_union = FALSE) %>%
   sf::st_cast("LINESTRING") %>%
   dplyr::left_join(tbl_deploy)
 
-usethis::use_data(predict_pts_sf, predict_lines_sf,
+pl_predict_pts <-
+  aniMotum::grab(locs_fit,
+       what = "predicted",
+       as_sf = TRUE,
+       group = TRUE) |> 
+  dplyr::rename(speno = id,
+         datetime = date) |> 
+  dplyr::left_join(tbl_deploy, by = 'speno') |> 
+  dplyr::filter(species == "Spotted seal")
+
+pl_predict_lines <- pl_predict_pts %>% 
+  dplyr::group_by(speno) %>%
+  dplyr::summarise(do_union = FALSE) %>%
+  sf::st_cast("LINESTRING") %>%
+  dplyr::left_join(tbl_deploy)
+
+usethis::use_data(hf_predict_pts, hf_predict_lines,
+                  pl_predict_pts, pl_predict_lines,
                   version = 3,
                   overwrite = TRUE)
 
