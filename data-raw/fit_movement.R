@@ -9,23 +9,21 @@ con <- DBI::dbConnect(duckdb())
 DBI::dbExecute(con, "INSTALL httpfs; LOAD httpfs;")
 # dbExecute(con, "INSTALL 'spatial'; LOAD 'spatial';")
 
+max_no_na <- function(x) ifelse( !all(is.na(x)), max(x, na.rm=T), NA)
+
 tbl_deploy <- tbl(con, "read_parquet('https://github.com/noaa-afsc/mml-cefi-iceseal-data/raw/main/tbl_deploy/tbl_deploy.parquet')") |> 
   collect() |> 
-  summarise(deployids = list(unique(deployid)),
-            serial_nums = list(unique(serial_num)),
-            ptts = list(unique(ptt)),
-            tag_families = list(unique(tag_family)),
-            end_dt = dplyr::case_when(
-              all(is.na(end_dt)) ~ NA,
-              any(is.na(end_dt)) ~ max(end_dt,na.rm=TRUE),
-              .default = max(end_dt)
-            ),
-          .by = c(speno, species, age, sex, deploy_dt, 
-                  field_effort_lku)) |> 
-  dplyr::mutate(end_dt = case_when(
-                  lubridate::year(deploy_dt) == 2024 ~ as.POSIXct("2024-12-31"),
-                  .default = end_dt
-  ))
+    summarise(deployids = list(unique(deployid)),
+  serial_nums = list(unique(serial_num)),
+  ptts = list(unique(ptt)),
+  tag_families = list(unique(tag_family)),
+  end_dt = as.POSIXct(max_no_na(end_dt), tx="UTC"),
+.by = c(speno, species, age, sex, deploy_dt, 
+        field_effort_lku)) |> 
+dplyr::mutate(end_dt = case_when(
+        lubridate::year(deploy_dt) == 2024 ~ as.POSIXct("2024-12-31"),
+        .default = end_dt
+))
 
 
 select_spenos <- tbl(con, "read_parquet('https://github.com/noaa-afsc/mml-cefi-iceseal-data/raw/main/locs_obs/locs_obs.parquet')") |> 
