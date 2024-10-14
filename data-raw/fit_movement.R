@@ -94,6 +94,7 @@ speno_keep <- speno_counts |>
 locs_obs <- locs_obs |> 
   dplyr::filter(speno %in% speno_keep)
 
+deploy_gaps <- find_gaps(locs_obs)
 
 locs_fit <- aniMotum::fit_ssm(
   x = locs_obs,
@@ -111,22 +112,7 @@ locs_fit <- aniMotum::fit_ssm(
   tz = "UTC"
 )
 
-locs_fit2 <- aniMotum::fit_ssm(
-  x = locs_obs |> dplyr::filter(speno == 'HF2009_2024'),
-  vmax = 8,
-  model = "crw",
-  time.step = 0.25,
-  id = "speno",
-  date = "datetime",
-  lc = "quality",
-  epar = c(
-    "error_semi_major_axis",
-    "error_semi_minor_axis",
-    "error_ellipse_orientation"
-  ),
-  tz = "UTC",
-  map = list(psi = factor(NA))
-)
+locs_fit <- locs_fit |> dplyr::filter(converged)
 
 hf_predict_pts <-
   aniMotum::grab(locs_fit,
@@ -137,6 +123,11 @@ hf_predict_pts <-
          datetime = date) |> 
   dplyr::left_join(tbl_deploy, by = 'speno') |> 
   dplyr::filter(species == "Ribbon seal")
+
+hf_predict_pts <- hf_predict_pts |> 
+  filter_predicts(deploy_gaps) |> 
+  dplyr::filter(!in_gap)
+
 
 hf_predict_lines <- hf_predict_pts %>% 
   dplyr::group_by(speno) %>%

@@ -21,3 +21,37 @@ find_gaps <- function(d, dtMax=7, unit = "days", ...) {
 
   return(d)
 }
+
+#' @description determine which points occur during identified gaps.
+#' @param pts A data set of telemetry locations and times; must have `datetime`
+#' and `speno` columns.
+#' @param gaps data frame of start(t1) and end(t2) times from \code{find_gaps()}.
+#' @author Josh M. London
+#' @export
+#'
+filter_predicts <- function(pts, gaps) {
+  pts$in_gap <- FALSE
+  for (spn in unique(gaps$speno)) {
+    speno_pts <- pts |> dplyr::filter(speno == spn)
+    speno_gaps <- gaps |> dplyr::filter(speno == spn)
+
+    in_gap <- check_between(speno_pts$datetime,
+                            start = speno_gaps$t1,
+                            end = speno_gaps$t2)
+    
+    pts[pts$speno == spn,]$in_gap <- in_gap
+  }
+  return(pts)
+}
+
+#' @description check if times occur between start and end
+#' @param x a vector of datetime values.
+#' @param start vector of start times.
+#' @param end vector of end times
+#' @author Josh M. London
+#' @export
+#'
+check_between <- function (x, start, end) {
+  res <- purrr::map_lgl(x, ~any(. > start & . < end))
+  return(res)
+}
